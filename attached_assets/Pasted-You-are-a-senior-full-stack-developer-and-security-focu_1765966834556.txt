@@ -1,0 +1,250 @@
+You are a senior full-stack developer and security-focused system designer.
+
+I am building an event website with multiple rounds.
+The website already has an existing frontend and backend.
+Do NOT break or rewrite existing code unless necessary. Detect and integrate with existing structure.
+
+Your task is to design and implement a secure submission system with proctoring features and admin controls, as described below.
+
+🔐 SUBMISSION SYSTEM (ROUND-WISE)
+📄 Round 2: PDF Solution Submission
+
+When a user clicks “Submit PDF Solution”:
+
+Show a secure submission form that collects:
+
+Participant ID (this ID will be provided by me)
+
+PDF file upload
+
+On submit:
+
+Store the PDF securely in server storage
+
+Save metadata in the database:
+
+participant_id
+
+round_number = 2
+
+file_path / file_name
+
+timestamp
+
+submission_status
+
+Validate:
+
+Only PDF allowed
+
+File size limit
+
+One submission per participant (unless admin allows resubmission)
+
+🔗 Round 3: Repository Link Submission
+
+When user clicks “Submit Repo Link”:
+
+Show a form with:
+
+Participant ID
+
+Repository URL (GitHub/GitLab/etc.)
+
+On submit:
+
+Save to database:
+
+participant_id
+
+round_number = 3
+
+repo_link
+
+timestamp
+
+Validate:
+
+Proper URL format
+
+Prevent empty or duplicate submissions
+
+🗄️ DATABASE REQUIREMENTS
+
+Design database tables (or integrate with existing ones) such as:
+
+submissions
+
+id
+
+participant_id
+
+round_number
+
+submission_type (pdf / repo)
+
+submission_value (file path or link)
+
+timestamp
+
+status
+
+Ensure data is:
+
+persistent
+
+secure
+
+queryable by admin dashboard
+
+🛡️ PROCTORING / PROTECTION MODE (FRONTEND + JS)
+
+When Protector Mode is ENABLED, enforce the following:
+
+🚫 Copy–Paste Protection
+
+Disable:
+
+Ctrl+C
+
+Ctrl+V
+
+Right-click
+
+Text selection (optional, based on page)
+
+🔄 Tab Change Detection
+
+Detect when:
+
+User switches tabs
+
+Browser window loses focus
+
+Log:
+
+participant_id
+
+event type (tab switch)
+
+timestamp
+
+Optional behavior:
+
+warning popup
+
+auto refresh
+
+auto submission (configurable)
+
+📸 Screenshot / Screen Capture Detection
+
+Detect:
+
+PrintScreen key
+
+Screenshot attempts (best-effort via JS visibility & key detection)
+
+On detection:
+
+Log violation
+
+Show warning
+
+Optional auto refresh
+
+(Note: Mention browser limitations clearly but implement best possible detection.)
+
+🔁 Refresh / Navigation Control
+
+Detect:
+
+Page refresh
+
+Back / forward navigation
+
+Handle:
+
+warning message
+
+state preservation if allowed
+
+logging of behavior
+
+🧑‍💼 ADMIN CONTROL PANEL
+
+Create an Admin Toggle Button / Switch:
+
+🔘 Protector Mode ON / OFF
+
+Admin can:
+
+Enable protector mode globally
+
+Disable protector mode globally
+
+State should be:
+
+Stored in database
+
+Fetched dynamically by frontend
+
+When OFF:
+
+All restrictions are disabled
+
+When ON:
+
+All restrictions activate instantly
+
+Admin panel should:
+
+Be secure
+
+Not accessible to participants
+
+Reflect real-time protector status
+
+⚡ UX & FEEDBACK
+
+Clear messages for:
+
+Successful submission
+
+Errors
+
+Violations
+
+UI should feel:
+
+futuristic
+
+professional
+
+exam / event-like
+
+No intrusive alerts unless necessary
+
+🛠️ TECH CONSTRAINTS
+
+Use:
+
+HTML, CSS, JavaScript (frontend)
+
+Backend compatible with existing stack
+
+Do NOT:
+
+hardcode participant IDs
+
+expose admin routes
+
+store files on client side
+
+Ensure:
+
+performance
+
+security
+
+mobile + desktop compatibility

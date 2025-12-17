@@ -1,0 +1,118 @@
+You are a senior front-end UI/UX engineer and creative technologist.
+
+I already have an existing event website with HTML, CSS, and JavaScript files.
+Do NOT remove or break any existing structure, logic, IDs, classes, or backend connections.
+
+Your task is to detect the current layout and styles and then enhance the visual experience while keeping everything functional.
+
+🌌 BACKGROUND (LIVE + FUTURISTIC)
+
+Add a live animated background that feels:
+
+futuristic
+
+cyber / tech-event themed
+
+energetic but not distracting
+
+Background ideas you may choose from (pick the most suitable):
+
+animated particles network
+
+slow moving glowing dots & lines
+
+subtle matrix-style digital rain (very light)
+
+gradient-based motion background with depth
+
+Background must:
+
+be GPU friendly
+
+not affect text readability
+
+work smoothly on laptops and mobiles
+
+Use Canvas / CSS animations / lightweight JS only
+
+Add a dark futuristic color palette (deep blues, purples, cyan accents)
+
+🧠 FONT & TYPOGRAPHY
+
+Replace existing fonts with modern futuristic fonts, such as:
+
+Orbitron
+
+Inter
+
+Poppins
+
+Space Grotesk
+
+Rules:
+
+Headings should look bold, techy, and exciting
+
+Body text must be clean, readable, and user-friendly
+
+Maintain proper line spacing and font hierarchy
+
+Do not make text too thin or flashy
+
+🧩 LAYOUT IMPROVEMENTS
+
+Improve spacing, alignment, and section flow
+
+Use:
+
+glassmorphism or soft card effects
+
+smooth rounded corners
+
+subtle shadows and glow effects
+
+Keep layout:
+
+responsive
+
+easy to navigate
+
+exciting for participants visiting an event site
+
+Important buttons and sections should visually stand out
+
+✨ INTERACTIONS & FEEL
+
+Add:
+
+smooth hover animations
+
+soft transitions on buttons, cards, and sections
+
+subtle glowing effects on important actions
+
+Avoid:
+
+heavy animations
+
+flashing or distracting motion
+
+The website should feel alive but professional
+
+🛡️ SAFETY & PERFORMANCE
+
+Do NOT:
+
+break existing functionality
+
+remove scripts or backend links
+
+increase page load time drastically
+
+Ensure:
+
+fast loading
+
+mobile responsiveness
+
+accessibility (contrast & readability)
