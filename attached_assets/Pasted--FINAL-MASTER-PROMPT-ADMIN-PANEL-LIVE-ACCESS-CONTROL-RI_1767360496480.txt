@@ -1,0 +1,203 @@
+.
+
+🧠 FINAL MASTER PROMPT
+(ADMIN PANEL + LIVE ACCESS CONTROL + RIGHT DASHBOARD)
+
+Role:
+You are a senior full-stack developer and system architect.
+
+Goal:
+Build a secure, cyber-themed dashboard web application for an event called “Decode & Dominate” with:
+
+A right-side dashboard
+
+Backend-driven page loading
+
+A live admin panel that controls who can access which round
+
+🎨 THEME & UI (MANDATORY)
+
+KIITFEST-inspired purple cyber theme
+
+Dark violet / black background
+
+Purple & magenta neon glow
+
+Subtle binary / tech patterns
+
+Glassmorphism or glowing cards
+
+Monospace / tech fonts
+
+🧭 GLOBAL LAYOUT
+🔹 LEFT SIDE (Dynamic Content – 70–75%)
+
+Loads content from backend routes
+
+Routes:
+
+/round1
+
+/round2
+
+/round3
+
+Page content loads only if user is authorized
+
+🔹 RIGHT SIDE (Fixed Dashboard – 25–30%)
+
+Always visible
+
+Shows:
+
+Event name
+
+Logged-in username
+
+Navigation buttons
+
+Current round access status
+
+🔐 AUTHENTICATION SYSTEM (MANDATORY)
+
+Login required before accessing any round
+
+Username + Password authentication
+
+Credentials stored securely in backend
+
+No public access to rounds
+
+👤 USER ROLES
+🔹 ADMIN (Organizer)
+
+Full access
+
+Can log in to Admin Panel
+
+🔹 PARTICIPANT (Teams / Individuals)
+
+Can only access rounds explicitly allowed by admin
+
+🛠️ ADMIN PANEL (CORE REQUIREMENT)
+
+Create a separate Admin Dashboard accessible only to admin credentials.
+
+Admin Panel Features:
+
+User Management
+
+Create users manually
+
+Assign:
+
+Username
+
+Password
+
+Team Name
+
+Team ID
+
+Round Access Control (VERY IMPORTANT)
+
+Admin can individually enable or disable:
+
+Round 1 access
+
+Round 2 access
+
+Round 3 access
+
+Each user/team has separate access flags
+
+Example:
+
+Team A → Round 1 ✅, Round 2 ❌, Round 3 ❌
+
+Team B → Round 1 ✅, Round 2 ✅, Round 3 ❌
+
+Live Updates
+
+Changes made by admin reflect immediately
+
+No server restart required
+
+Dashboard updates continuously
+
+Attempt Control
+
+Admin can:
+
+Allow attempt
+
+Lock attempt
+
+Disqualify user
+
+🚫 ACCESS ENFORCEMENT LOGIC
+
+If user tries to access a round without permission:
+
+Show “Access Denied by Organizer”
+
+Backend must verify permissions before serving page
+
+Frontend alone is NOT trusted
+
+🧩 ROUND PAGES (BACKEND-LOADED)
+/round1 – FastTrack Quiz
+
+Accessible only if admin enables Round 1 for that user
+
+/round2 – Code Debugging
+
+Accessible only after admin approval
+
+/round3 – Web Cloning
+
+Accessible only for qualified users
+
+🔐 ANTI-CHEAT FEATURES (PARTICIPANT SIDE)
+
+Implement JavaScript-based monitoring:
+
+Disable copy & paste
+
+Disable right-click
+
+Detect tab change / window blur → auto refresh
+
+Detect screenshot keys → warning + refresh
+
+Optional fullscreen enforcement
+
+📊 ADMIN LIVE MONITORING (OPTIONAL BUT VALUABLE)
+
+Show:
+
+Logged-in users
+
+Active round per user
+
+Attempt status (Active / Locked)
+
+⚙️ TECH STACK
+
+Frontend: HTML, CSS, JavaScript
+
+Backend: Node.js + Express OR Python Flask
+
+Database:
+
+JSON / SQLite / MongoDB
+
+Clean structure:
+
+/routes
+
+/controllers
+
+/views
+
+/static
