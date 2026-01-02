@@ -211,52 +211,53 @@ export default function Admin() {
             </Dialog>
 
             <Dialog open={isAddingUser} onOpenChange={setIsAddingUser}>
-            <DialogTrigger asChild>
-              <Button className="bg-primary hover:bg-primary/80 text-black font-bold h-10 px-6">
-                <UserPlus className="w-4 h-4 mr-2" />
-                CREATE USER
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-[#050510] border-primary/30 text-white">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-display text-primary">NEW PARTICIPANT</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-4">
-                <Input 
-                  placeholder="Username" 
-                  value={newUser.username || ""} 
-                  onChange={e => setNewUser({...newUser, username: e.target.value})}
-                  className="bg-black/50 border-white/10"
-                />
-                <Input 
-                  placeholder="Password" 
-                  type="password"
-                  value={newUser.password || ""} 
-                  onChange={e => setNewUser({...newUser, password: e.target.value})}
-                  className="bg-black/50 border-white/10"
-                />
-                <Input 
-                  placeholder="Team Name" 
-                  value={newUser.teamName || ""} 
-                  onChange={e => setNewUser({...newUser, teamName: e.target.value})}
-                  className="bg-black/50 border-white/10"
-                />
-                <Input 
-                  placeholder="Team ID" 
-                  value={newUser.teamId || ""} 
-                  onChange={e => setNewUser({...newUser, teamId: e.target.value})}
-                  className="bg-black/50 border-white/10"
-                />
-                <Button 
-                  onClick={() => createUserMutation.mutate(newUser as InsertUser)}
-                  className="w-full bg-primary hover:bg-primary/80 text-black font-bold"
-                  disabled={createUserMutation.isPending}
-                >
-                  INITIALIZE ACCOUNT
+              <DialogTrigger asChild>
+                <Button className="bg-primary hover:bg-primary/80 text-black font-bold h-10 px-6">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  CREATE USER
                 </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="bg-[#050510] border-primary/30 text-white">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-display text-primary">NEW PARTICIPANT</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <Input 
+                    placeholder="Username" 
+                    value={newUser.username || ""} 
+                    onChange={e => setNewUser({...newUser, username: e.target.value})}
+                    className="bg-black/50 border-white/10"
+                  />
+                  <Input 
+                    placeholder="Password" 
+                    type="password"
+                    value={newUser.password || ""} 
+                    onChange={e => setNewUser({...newUser, password: e.target.value})}
+                    className="bg-black/50 border-white/10"
+                  />
+                  <Input 
+                    placeholder="Team Name" 
+                    value={newUser.teamName || ""} 
+                    onChange={e => setNewUser({...newUser, teamName: e.target.value})}
+                    className="bg-black/50 border-white/10"
+                  />
+                  <Input 
+                    placeholder="Team ID" 
+                    value={newUser.teamId || ""} 
+                    onChange={e => setNewUser({...newUser, teamId: e.target.value})}
+                    className="bg-black/50 border-white/10"
+                  />
+                  <Button 
+                    onClick={() => createUserMutation.mutate(newUser as InsertUser)}
+                    className="w-full bg-primary hover:bg-primary/80 text-black font-bold"
+                    disabled={createUserMutation.isPending}
+                  >
+                    INITIALIZE ACCOUNT
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <div className="rounded-lg border border-white/5 overflow-hidden">
