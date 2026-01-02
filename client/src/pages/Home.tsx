@@ -5,7 +5,6 @@ import { User } from "@shared/schema";
 import { cn } from "@/lib/utils";
 
 export default function Home() {
-  const [location, setLocation] = useLocation();
   const { data: user } = useQuery<User>({ queryKey: ["/api/me"] });
 
   const getStatusBadge = (status: string) => {

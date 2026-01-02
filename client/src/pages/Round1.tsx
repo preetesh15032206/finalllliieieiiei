@@ -1,10 +1,16 @@
-import { AlertTriangle, Shield, Clock, Award } from "lucide-react";
+import { AlertTriangle, Shield, Clock, Award, Lock, ShieldAlert } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { User } from "@shared/schema";
+import { Link } from "wouter";
 
 export default function Round1() {
+  const { data: user } = useQuery<User>({ queryKey: ["/api/me"] });
   const [timeLeft, setTimeLeft] = useState(30 * 60); // 30 mins
 
   useEffect(() => {
+    if (user?.round1Access !== "active") return;
+
     const timer = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
@@ -12,14 +18,12 @@ export default function Round1() {
     // Anti-cheat: Disable right-click
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault();
-      alert("Security Alert: Right-click is disabled!");
     };
     document.addEventListener('contextmenu', handleContextMenu);
 
     // Anti-cheat: Disable copy/paste/cut
     const handleCopyPaste = (e: ClipboardEvent) => {
       e.preventDefault();
-      alert("Security Alert: Copy/Paste is disabled!");
     };
     document.addEventListener('copy', handleCopyPaste);
     document.addEventListener('cut', handleCopyPaste);
@@ -28,7 +32,6 @@ export default function Round1() {
     // Anti-cheat: Detect tab switching
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        alert("Security Alert: Tab switching detected! Refreshing...");
         window.location.reload();
       }
     };
@@ -42,7 +45,23 @@ export default function Round1() {
       document.removeEventListener('paste', handleCopyPaste);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [user]);
+
+  if (!user || user.round1Access !== "active") {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center animate-in fade-in duration-700">
+        <ShieldAlert className="w-20 h-20 text-red-500 mb-6 animate-pulse" />
+        <h1 className="text-4xl font-bold text-white font-display tracking-widest mb-4">ACCESS DENIED</h1>
+        <p className="text-gray-400 font-mono text-center max-w-md">
+          Round 1 is currently {user?.round1Access || "LOCKED"}. <br />
+          Please contact the event organizer for authorization.
+        </p>
+        <Link href="/">
+          <button className="cyber-button mt-8 px-8 py-2">RETURN TO BASE</button>
+        </Link>
+      </div>
+    );
+  }
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

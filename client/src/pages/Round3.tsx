@@ -1,18 +1,39 @@
-import { Clock, GitBranch, Download, Check, X, Shield } from "lucide-react";
+import { Clock, GitBranch, Download, Check, X, Shield, ShieldAlert } from "lucide-react";
 import { useState } from "react";
 import { useProctoring } from "@/hooks/use-proctoring";
 import { SubmissionModal } from "@/components/SubmissionModal";
+import { useQuery } from "@tanstack/react-query";
+import { User } from "@shared/schema";
+import { Link } from "wouter";
 
 export default function Round3() {
+  const { data: user } = useQuery<User>({ queryKey: ["/api/me"] });
   const [isSubmissionOpen, setIsSubmissionOpen] = useState(false);
   
   // Anti-cheat mechanisms
-  const { isProtectorEnabled } = useProctoring({
-    enableTabDetection: true,
-    enableCopyPasteProtection: true,
-    enableRightClickProtection: true,
-    enableScreenshotDetection: true,
+  const proctoring = useProctoring({
+    enableTabDetection: user?.round3Access === "active",
+    enableCopyPasteProtection: user?.round3Access === "active",
+    enableRightClickProtection: user?.round3Access === "active",
+    enableScreenshotDetection: user?.round3Access === "active",
   });
+  const isProtectorEnabled = proctoring.isProtectorEnabled;
+
+  if (!user || user.round3Access !== "active") {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center animate-in fade-in duration-700">
+        <ShieldAlert className="w-20 h-20 text-white mb-6 animate-pulse" />
+        <h1 className="text-4xl font-bold text-white font-display tracking-widest mb-4 uppercase">Final Barrier</h1>
+        <p className="text-gray-400 font-mono text-center max-w-md">
+          Round 3 Status: <span className="text-white font-bold uppercase">{user?.round3Access || "LOCKED"}</span> <br />
+          Only qualified participants authorized by admin can enter this round.
+        </p>
+        <Link href="/">
+          <button className="cyber-button-secondary border-white/50 text-white mt-8 px-12 py-2 rounded-lg font-display tracking-widest">RE-ESTABLISH CONNECTION</button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-in fade-in duration-700">

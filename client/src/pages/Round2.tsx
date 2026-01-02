@@ -1,18 +1,39 @@
-import { Target, Clock, FileText, AlertOctagon, AlertTriangle } from "lucide-react";
+import { Target, Clock, FileText, AlertOctagon, ShieldAlert } from "lucide-react";
 import { useState } from "react";
 import { useProctoring } from "@/hooks/use-proctoring";
 import { SubmissionModal } from "@/components/SubmissionModal";
+import { useQuery } from "@tanstack/react-query";
+import { User } from "@shared/schema";
+import { Link } from "wouter";
 
 export default function Round2() {
+  const { data: user } = useQuery<User>({ queryKey: ["/api/me"] });
   const [isSubmissionOpen, setIsSubmissionOpen] = useState(false);
   
   // Anti-cheat mechanisms
-  const { isProtectorEnabled } = useProctoring({
-    enableTabDetection: true,
-    enableCopyPasteProtection: true,
-    enableRightClickProtection: true,
-    enableScreenshotDetection: true,
+  const proctoring = useProctoring({
+    enableTabDetection: user?.round2Access === "active",
+    enableCopyPasteProtection: user?.round2Access === "active",
+    enableRightClickProtection: user?.round2Access === "active",
+    enableScreenshotDetection: user?.round2Access === "active",
   });
+  const isProtectorEnabled = proctoring.isProtectorEnabled;
+
+  if (!user || user.round2Access !== "active") {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center animate-in fade-in duration-700">
+        <ShieldAlert className="w-20 h-20 text-secondary mb-6 animate-pulse" />
+        <h1 className="text-4xl font-bold text-white font-display tracking-widest mb-4 uppercase">Access Restricted</h1>
+        <p className="text-gray-400 font-mono text-center max-w-md">
+          Round 2 Access Status: <span className="text-secondary font-bold uppercase">{user?.round2Access || "LOCKED"}</span> <br />
+          Verification from organizers required to proceed.
+        </p>
+        <Link href="/">
+          <button className="cyber-button-secondary mt-8 px-10 py-2 rounded-lg font-display tracking-widest">BACK TO OVERVIEW</button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-in fade-in duration-700">
