@@ -1,4 +1,4 @@
-import { Target, Clock, FileText, AlertOctagon, ShieldAlert } from "lucide-react";
+import { Target, Clock, FileText, AlertOctagon, ShieldAlert, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { useProctoring } from "@/hooks/use-proctoring";
 import { SubmissionModal } from "@/components/SubmissionModal";
