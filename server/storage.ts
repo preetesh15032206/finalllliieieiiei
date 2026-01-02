@@ -67,6 +67,14 @@ export class MemStorage implements IStorage {
     return updatedUser;
   }
 
+  async updatePassword(id: string, newPassword: string): Promise<User> {
+    const user = this.users.get(id);
+    if (!user) throw new Error("User not found");
+    const updatedUser = { ...user, password: newPassword };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
   async listUsers(): Promise<User[]> {
     return Array.from(this.users.values());
   }

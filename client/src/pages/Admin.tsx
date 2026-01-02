@@ -27,6 +27,8 @@ export default function Admin() {
   const { toast } = useToast();
   const [password, setPassword] = useState("");
   const [isAddingUser, setIsAddingUser] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [newAdminPassword, setNewAdminPassword] = useState("");
   const [newUser, setNewUser] = useState<Partial<InsertUser>>({
     role: "participant",
     round1Access: "locked",
@@ -76,6 +78,20 @@ export default function Admin() {
       await apiRequest("DELETE", `/api/admin/users/${id}`);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] }),
+  });
+
+  const changeAdminPasswordMutation = useMutation({
+    mutationFn: async (newPassword: string) => {
+      await apiRequest("POST", "/api/admin/change-password", { newPassword });
+    },
+    onSuccess: () => {
+      setIsChangingPassword(false);
+      setNewAdminPassword("");
+      toast({ title: "Success", description: "Admin password updated." });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: "Failed to update password.", variant: "destructive" });
+    }
   });
 
   if (!me || me.role !== "admin") {
@@ -156,13 +172,45 @@ export default function Admin() {
         </div>
       </div>
 
+      {/* User Management Section */}
       <div className="cyber-card backdrop-blur-xl">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-2xl text-white font-bold font-display flex items-center gap-3">
             <UsersIcon className="w-6 h-6 text-primary" />
             User Management
           </h2>
-          <Dialog open={isAddingUser} onOpenChange={setIsAddingUser}>
+          <div className="flex gap-4">
+            <Dialog open={isChangingPassword} onOpenChange={setIsChangingPassword}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="border-secondary/50 text-secondary hover:bg-secondary/10">
+                  <Key className="w-4 h-4 mr-2" />
+                  CHANGE PASSWORD
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-[#050510] border-secondary/30 text-white">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-display text-secondary">UPDATE ADMIN PASSWORD</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <Input 
+                    placeholder="New Admin Password" 
+                    type="password"
+                    value={newAdminPassword} 
+                    onChange={e => setNewAdminPassword(e.target.value)}
+                    className="bg-black/50 border-white/10"
+                  />
+                  <Button 
+                    onClick={() => changeAdminPasswordMutation.mutate(newAdminPassword)}
+                    className="w-full bg-secondary hover:bg-secondary/80 text-white font-bold"
+                    disabled={changeAdminPasswordMutation.isPending || newAdminPassword.length < 6}
+                  >
+                    {changeAdminPasswordMutation.isPending ? "UPDATING..." : "CONFIRM CHANGE"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isAddingUser} onOpenChange={setIsAddingUser}>
             <DialogTrigger asChild>
               <Button className="bg-primary hover:bg-primary/80 text-black font-bold h-10 px-6">
                 <UserPlus className="w-4 h-4 mr-2" />

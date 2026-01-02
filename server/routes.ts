@@ -72,6 +72,20 @@ export async function registerRoutes(
     res.json(updatedUser);
   });
 
+  app.post("/api/admin/change-password", async (req, res) => {
+    if (!req.session.userId) return res.sendStatus(401);
+    const user = await storage.getUser(req.session.userId);
+    if (user?.role !== "admin") return res.sendStatus(403);
+    
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    }
+    
+    const updatedUser = await storage.updatePassword(req.session.userId, newPassword);
+    res.json({ message: "Password updated successfully" });
+  });
+
   app.delete("/api/admin/users/:id", async (req, res) => {
     const user = await storage.getUser(req.session.userId!);
     if (user?.role !== "admin") return res.sendStatus(403);
