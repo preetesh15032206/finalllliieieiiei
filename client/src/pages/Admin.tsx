@@ -21,19 +21,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 
 export default function Admin() {
   const { toast } = useToast();
   const [password, setPassword] = useState("");
   const [isAddingUser, setIsAddingUser] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [newAdminPassword, setNewAdminPassword] = useState("");
   const [newUser, setNewUser] = useState<Partial<InsertUser>>({
     role: "participant",
-    round1Access: "locked",
-    round2Access: "locked",
-    round3Access: "locked",
+    round1Access: false,
+    round2Access: false,
+    round3Access: false,
   });
 
   const { data: me } = useQuery<User>({ queryKey: ["/api/me"] });
@@ -63,12 +62,18 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       setIsAddingUser(false);
       toast({ title: "User Created", description: "Participant added to system." });
+      setNewUser({
+        role: "participant",
+        round1Access: false,
+        round2Access: false,
+        round3Access: false,
+      });
     },
   });
 
   const updateAccessMutation = useMutation({
-    mutationFn: async ({ id, round, status }: { id: string, round: string, status: string }) => {
-      await apiRequest("PATCH", `/api/admin/users/${id}/access`, { round, status });
+    mutationFn: async ({ id, round, access }: { id: string, round: string, access: boolean }) => {
+      await apiRequest("PATCH", `/api/admin/users/${id}/access`, { round, access });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] }),
   });
@@ -80,24 +85,10 @@ export default function Admin() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] }),
   });
 
-  const changeAdminPasswordMutation = useMutation({
-    mutationFn: async (newPassword: string) => {
-      await apiRequest("POST", "/api/admin/change-password", { newPassword });
-    },
-    onSuccess: () => {
-      setIsChangingPassword(false);
-      setNewAdminPassword("");
-      toast({ title: "Success", description: "Admin password updated." });
-    },
-    onError: (err: any) => {
-      toast({ title: "Error", description: "Failed to update password.", variant: "destructive" });
-    }
-  });
-
   if (!me || me.role !== "admin") {
     return (
       <div className="min-h-[80vh] flex items-center justify-center animate-in fade-in duration-700">
-        <div className="cyber-card w-full max-w-md backdrop-blur-xl border-red-500/30">
+        <div className="w-full max-w-md p-8 border border-red-500/30 rounded-lg bg-black/40 backdrop-blur-xl">
           <div className="text-center mb-8">
             <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-white font-display tracking-wider">ADMIN ACCESS</h1>
@@ -136,14 +127,13 @@ export default function Admin() {
          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[100%] bg-red-500/10 blur-[100px] rounded-full -z-10"></div>
          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white font-display uppercase tracking-wider flex items-center justify-center gap-4">
             <Shield className="w-10 h-10 text-red-500" />
-            Admin <span className="text-red-500 glitch-text" data-text="Control">Control</span>
+            Admin Control
          </h1>
          <p className="text-gray-400 font-mono">SYSTEM_ADMIN_ACCESS_LEVEL_5</p>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="cyber-card p-6 flex items-center gap-4">
+        <div className="p-6 border rounded-lg bg-black/40 backdrop-blur-xl flex items-center gap-4">
           <div className="p-3 bg-primary/20 rounded border border-primary/30">
             <UsersIcon className="w-6 h-6 text-primary" />
           </div>
@@ -152,7 +142,7 @@ export default function Admin() {
             <div className="text-2xl font-bold text-white font-display">{users?.length || 0}</div>
           </div>
         </div>
-        <div className="cyber-card p-6 flex items-center gap-4">
+        <div className="p-6 border rounded-lg bg-black/40 backdrop-blur-xl flex items-center gap-4">
           <div className="p-3 bg-secondary/20 rounded border border-secondary/30">
             <Activity className="w-6 h-6 text-secondary" />
           </div>
@@ -161,7 +151,7 @@ export default function Admin() {
             <div className="text-2xl font-bold text-white font-display">ONLINE</div>
           </div>
         </div>
-        <div className="cyber-card p-6 flex items-center gap-4">
+        <div className="p-6 border rounded-lg bg-black/40 backdrop-blur-xl flex items-center gap-4">
           <div className="p-3 bg-red-500/20 rounded border border-red-500/30">
             <Shield className="w-6 h-6 text-red-500" />
           </div>
@@ -172,92 +162,59 @@ export default function Admin() {
         </div>
       </div>
 
-      {/* User Management Section */}
-      <div className="cyber-card backdrop-blur-xl">
+      <div className="p-8 border rounded-lg bg-black/40 backdrop-blur-xl">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-2xl text-white font-bold font-display flex items-center gap-3">
             <UsersIcon className="w-6 h-6 text-primary" />
             User Management
           </h2>
-          <div className="flex gap-4">
-            <Dialog open={isChangingPassword} onOpenChange={setIsChangingPassword}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="border-secondary/50 text-secondary hover:bg-secondary/10">
-                  <Key className="w-4 h-4 mr-2" />
-                  CHANGE PASSWORD
+          <Dialog open={isAddingUser} onOpenChange={setIsAddingUser}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary hover:bg-primary/80 text-black font-bold h-10 px-6">
+                <UserPlus className="w-4 h-4 mr-2" />
+                CREATE USER
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-black/95 border border-primary/30 text-white">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-display text-primary">NEW PARTICIPANT</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                <Input 
+                  placeholder="Username" 
+                  value={newUser.username || ""} 
+                  onChange={e => setNewUser({...newUser, username: e.target.value})}
+                  className="bg-black/50 border-white/10"
+                />
+                <Input 
+                  placeholder="Password" 
+                  type="password"
+                  value={newUser.password || ""} 
+                  onChange={e => setNewUser({...newUser, password: e.target.value})}
+                  className="bg-black/50 border-white/10"
+                />
+                <Input 
+                  placeholder="Team Name" 
+                  value={newUser.teamName || ""} 
+                  onChange={e => setNewUser({...newUser, teamName: e.target.value})}
+                  className="bg-black/50 border-white/10"
+                />
+                <Input 
+                  placeholder="Team ID" 
+                  value={newUser.teamId || ""} 
+                  onChange={e => setNewUser({...newUser, teamId: e.target.value})}
+                  className="bg-black/50 border-white/10"
+                />
+                <Button 
+                  onClick={() => createUserMutation.mutate(newUser as InsertUser)}
+                  className="w-full bg-primary hover:bg-primary/80 text-black font-bold"
+                  disabled={createUserMutation.isPending}
+                >
+                  INITIALIZE ACCOUNT
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-[#050510] border-secondary/30 text-white">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-display text-secondary">UPDATE ADMIN PASSWORD</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <Input 
-                    placeholder="New Admin Password" 
-                    type="password"
-                    value={newAdminPassword} 
-                    onChange={e => setNewAdminPassword(e.target.value)}
-                    className="bg-black/50 border-white/10"
-                  />
-                  <Button 
-                    onClick={() => changeAdminPasswordMutation.mutate(newAdminPassword)}
-                    className="w-full bg-secondary hover:bg-secondary/80 text-white font-bold"
-                    disabled={changeAdminPasswordMutation.isPending || newAdminPassword.length < 6}
-                  >
-                    {changeAdminPasswordMutation.isPending ? "UPDATING..." : "CONFIRM CHANGE"}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            <Dialog open={isAddingUser} onOpenChange={setIsAddingUser}>
-              <DialogTrigger asChild>
-                <Button className="bg-primary hover:bg-primary/80 text-black font-bold h-10 px-6">
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  CREATE USER
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-[#050510] border-primary/30 text-white">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-display text-primary">NEW PARTICIPANT</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <Input 
-                    placeholder="Username" 
-                    value={newUser.username || ""} 
-                    onChange={e => setNewUser({...newUser, username: e.target.value})}
-                    className="bg-black/50 border-white/10"
-                  />
-                  <Input 
-                    placeholder="Password" 
-                    type="password"
-                    value={newUser.password || ""} 
-                    onChange={e => setNewUser({...newUser, password: e.target.value})}
-                    className="bg-black/50 border-white/10"
-                  />
-                  <Input 
-                    placeholder="Team Name" 
-                    value={newUser.teamName || ""} 
-                    onChange={e => setNewUser({...newUser, teamName: e.target.value})}
-                    className="bg-black/50 border-white/10"
-                  />
-                  <Input 
-                    placeholder="Team ID" 
-                    value={newUser.teamId || ""} 
-                    onChange={e => setNewUser({...newUser, teamId: e.target.value})}
-                    className="bg-black/50 border-white/10"
-                  />
-                  <Button 
-                    onClick={() => createUserMutation.mutate(newUser as InsertUser)}
-                    className="w-full bg-primary hover:bg-primary/80 text-black font-bold"
-                    disabled={createUserMutation.isPending}
-                  >
-                    INITIALIZE ACCOUNT
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="rounded-lg border border-white/5 overflow-hidden">
@@ -282,21 +239,21 @@ export default function Admin() {
                       <div className="text-xs text-gray-500 font-mono uppercase">{user.teamName} ({user.teamId})</div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <AccessSelector 
-                        value={user.round1Access} 
-                        onChange={(status) => updateAccessMutation.mutate({ id: user.id, round: "round1", status })}
+                      <Switch 
+                        checked={user.round1Access}
+                        onCheckedChange={(checked) => updateAccessMutation.mutate({ id: user.id, round: "round1", access: checked })}
                       />
                     </TableCell>
                     <TableCell className="text-center">
-                      <AccessSelector 
-                        value={user.round2Access} 
-                        onChange={(status) => updateAccessMutation.mutate({ id: user.id, round: "round2", status })}
+                      <Switch 
+                        checked={user.round2Access}
+                        onCheckedChange={(checked) => updateAccessMutation.mutate({ id: user.id, round: "round2", access: checked })}
                       />
                     </TableCell>
                     <TableCell className="text-center">
-                      <AccessSelector 
-                        value={user.round3Access} 
-                        onChange={(status) => updateAccessMutation.mutate({ id: user.id, round: "round3", status })}
+                      <Switch 
+                        checked={user.round3Access}
+                        onCheckedChange={(checked) => updateAccessMutation.mutate({ id: user.id, round: "round3", access: checked })}
                       />
                     </TableCell>
                     <TableCell className="text-right">
@@ -318,31 +275,4 @@ export default function Admin() {
       </div>
     </div>
   );
-}
-
-function AccessSelector({ value, onChange }: { value: string, onChange: (val: string) => void }) {
-  const getColors = () => {
-    switch(value) {
-      case "active": return "text-green-400 bg-green-500/10 border-green-500/30";
-      case "disqualified": return "text-red-500 bg-red-500/10 border-red-500/30";
-      default: return "text-gray-500 bg-gray-500/10 border-gray-500/30";
-    }
-  };
-
-  return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className={cn("w-32 h-8 font-mono text-[10px] uppercase font-bold mx-auto", getColors())}>
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent className="bg-[#050510] border-white/10 text-white">
-        <SelectItem value="locked" className="font-mono text-[10px] uppercase">LOCKED</SelectItem>
-        <SelectItem value="active" className="font-mono text-[10px] uppercase">ACTIVE</SelectItem>
-        <SelectItem value="disqualified" className="font-mono text-[10px] uppercase">DQ</SelectItem>
-      </SelectContent>
-    </Select>
-  );
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
 }
