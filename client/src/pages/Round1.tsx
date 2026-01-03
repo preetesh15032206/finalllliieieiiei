@@ -1,29 +1,90 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { User } from "@shared/schema";
-import { Link, useLocation } from "wouter";
-import { ShieldAlert, Lock, ChevronLeft } from "lucide-react";
+import { Link } from "wouter";
+import { ShieldAlert, ChevronLeft, Lock, LogIn } from "lucide-react";
 import { useAntiCheat } from "@/hooks/use-anti-cheat";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Round1() {
   const { data: user, isLoading } = useQuery<User>({ queryKey: ["/api/me"] });
-  const [location, setLocation] = useLocation();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const { toast } = useToast();
 
   useAntiCheat();
 
+  const authMutation = useMutation({
+    mutationFn: async () => {
+      // Re-verify password for this specific round entry
+      const res = await apiRequest("POST", "/api/login", { 
+        username: user?.username, 
+        password 
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      if (user?.round1Access || user?.role === "admin") {
+        setIsAuthenticated(true);
+        toast({ title: "Authorized", description: "Identity verified. Round 1 unlocked." });
+      } else {
+        toast({ 
+          title: "Access Denied", 
+          description: "Admin has not approved access for this round.",
+          variant: "destructive"
+        });
+      }
+    },
+    onError: () => {
+      toast({ 
+        title: "Auth Failed", 
+        description: "Invalid credentials.",
+        variant: "destructive"
+      });
+    }
+  });
+
   if (isLoading) return <div className="p-10 animate-pulse">SYNCING SYSTEM...</div>;
 
-  if (!user || (!user.round1Access && user.role !== "admin")) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center animate-in fade-in duration-700">
-        <ShieldAlert className="w-20 h-20 text-red-500 mb-6 animate-pulse" />
-        <h1 className="text-4xl font-bold text-white font-display tracking-widest mb-4">ACCESS DENIED</h1>
-        <p className="text-gray-400 font-mono text-center max-w-md">
-          Round 1 is currently LOCKED for your account. <br />
-          Please contact the event organizer for authorization.
-        </p>
-        <Link href="/">
-          <button className="px-8 py-2 bg-primary text-black font-bold rounded mt-8">RETURN TO BASE</button>
-        </Link>
+        <div className="w-full max-w-md p-8 border border-primary/30 rounded-lg bg-black/40 backdrop-blur-xl">
+          <div className="text-center mb-8">
+            <Lock className="w-16 h-16 text-primary mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-white font-display tracking-wider uppercase">Round 1 Identity Verification</h1>
+            <p className="text-gray-400 font-mono text-sm mt-2">Enter credentials to unlock round content</p>
+          </div>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            authMutation.mutate();
+          }} className="space-y-6">
+            <Input
+              type="password"
+              placeholder="Confirm Password"
+              className="bg-black/50 border-white/10 focus:border-primary text-white font-mono text-center"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoFocus
+            />
+            <Button 
+              type="submit" 
+              disabled={authMutation.isPending}
+              className="w-full bg-primary hover:bg-primary/80 text-black font-bold tracking-widest font-display h-12"
+            >
+              <LogIn className="w-4 h-4 mr-2" />
+              {authMutation.isPending ? "VERIFYING..." : "UNLOCK ROUND"}
+            </Button>
+            <Link href="/">
+              <button type="button" className="w-full text-gray-500 hover:text-white text-xs uppercase font-mono mt-4">
+                Cancel
+              </button>
+            </Link>
+          </form>
+        </div>
       </div>
     );
   }
