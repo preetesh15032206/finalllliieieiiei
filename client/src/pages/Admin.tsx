@@ -1,10 +1,10 @@
-import { Shield, LogIn, UserPlus, Trash2, Key, Users as UsersIcon, Activity, Lock, Unlock } from "lucide-react";
+import { Shield, LogIn, UserPlus, Trash2, Users as UsersIcon, Activity, Lock, Unlock, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { User, InsertUser } from "@shared/schema";
+import { User, InsertUser, Violation } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   Table,
@@ -41,6 +41,12 @@ export default function Admin() {
     enabled: me?.role === "admin"
   });
 
+  const { data: violations } = useQuery<Violation[]>({
+    queryKey: ["/api/admin/violations"],
+    enabled: me?.role === "admin",
+    refetchInterval: 5000 // Poll for live updates
+  });
+
   const loginMutation = useMutation({
     mutationFn: async (credentials: any) => {
       const res = await apiRequest("POST", "/api/login", credentials);
@@ -69,6 +75,13 @@ export default function Admin() {
         round3Access: false,
       });
     },
+    onError: (err: Error) => {
+      toast({ 
+        title: "Creation Failed", 
+        description: err.message.includes("400") ? "Invalid data. Check password length." : "Failed to create user", 
+        variant: "destructive" 
+      });
+    }
   });
 
   const updateAccessMutation = useMutation({
@@ -147,8 +160,8 @@ export default function Admin() {
             <Activity className="w-6 h-6 text-secondary" />
           </div>
           <div>
-            <div className="text-xs text-gray-500 font-mono">ACTIVE_SYSTEMS</div>
-            <div className="text-2xl font-bold text-white font-display">ONLINE</div>
+            <div className="text-xs text-gray-500 font-mono">VIOLATIONS</div>
+            <div className="text-2xl font-bold text-red-500 font-display animate-pulse">{violations?.length || 0}</div>
           </div>
         </div>
         <div className="p-6 border rounded-lg bg-black/40 backdrop-blur-xl flex items-center gap-4">
@@ -159,6 +172,30 @@ export default function Admin() {
             <div className="text-xs text-gray-500 font-mono">SECURITY_LEVEL</div>
             <div className="text-2xl font-bold text-white font-display">MAXIMUM</div>
           </div>
+        </div>
+      </div>
+
+      {/* Live Violation Log */}
+      <div className="p-8 border rounded-lg bg-black/40 backdrop-blur-xl border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.05)]">
+        <h2 className="text-2xl text-red-500 font-bold font-display flex items-center gap-3 mb-6">
+          <AlertTriangle className="w-6 h-6 animate-pulse" />
+          Live Violation Detector
+        </h2>
+        <div className="max-h-48 overflow-y-auto space-y-2 font-mono text-sm">
+          {violations?.length === 0 ? (
+            <p className="text-gray-600 italic">No violations detected yet.</p>
+          ) : (
+            violations?.map((v) => {
+              const u = users?.find(user => user.id === v.userId);
+              return (
+                <div key={v.id} className="flex justify-between items-center p-2 bg-red-500/5 border-l-2 border-red-500 rounded">
+                  <span className="text-gray-300">[{new Date(v.timestamp).toLocaleTimeString()}]</span>
+                  <span className="text-white font-bold">{u?.username || 'Unknown'}</span>
+                  <span className="text-red-400 uppercase">{v.type.replace('_', ' ')}</span>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 
@@ -187,7 +224,7 @@ export default function Admin() {
                   className="bg-black/50 border-white/10"
                 />
                 <Input 
-                  placeholder="Password" 
+                  placeholder="Password (Min 6 chars)" 
                   type="password"
                   value={newUser.password || ""} 
                   onChange={e => setNewUser({...newUser, password: e.target.value})}
