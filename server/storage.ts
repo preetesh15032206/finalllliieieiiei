@@ -1,6 +1,8 @@
 import { type User, type InsertUser, type Violation } from "@shared/schema";
 import { randomUUID } from "crypto";
 
+import EventEmitter from "events";
+
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -8,17 +10,23 @@ export interface IStorage {
   updateUserAccess(id: string, round: "round1" | "round2" | "round3", access: boolean): Promise<User>;
   listUsers(): Promise<User[]>;
   deleteUser(id: string): Promise<void>;
-  logViolation(userId: string, type: string): Promise<Violation>;
+  // details is an optional object with additional context about the violation
+  logViolation(userId: string, type: string, details?: Record<string, any>, severity?: string): Promise<Violation>;
   getViolations(): Promise<Violation[]>;
+  // EventEmitter to broadcast new violations in real-time
+  violationEmitter: EventEmitter;
 }
+
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
-  private violations: Violation[];
+  private violations: Array<Violation & { details?: Record<string, any>; username?: string | null; teamName?: string | null }>;
+  public violationEmitter: EventEmitter;
 
   constructor() {
     this.users = new Map();
     this.violations = [];
+    this.violationEmitter = new EventEmitter();
     
     // Default Admin
     const adminId = randomUUID();
@@ -75,19 +83,45 @@ export class MemStorage implements IStorage {
     this.users.delete(id);
   }
 
-  async logViolation(userId: string, type: string): Promise<Violation> {
-    const violation: Violation = {
-      id: randomUUID(),
+  async logViolation(userId: string, type: string, details: Record<string, any> = {}, severity = "info"): Promise<Violation & { details?: Record<string, any>; severity?: string; username?: string | null; teamName?: string | null }> {
+    const timestamp = new Date().toISOString();
+    const id = randomUUID();
+
+    const user = await this.getUser(userId);
+
+    const violation = {
+      id,
       userId,
       type,
-      timestamp: new Date().toISOString()
-    };
-    this.violations.push(violation);
+      timestamp,
+      severity,
+      details,
+      username: user?.username ?? null,
+      teamName: user?.teamName ?? null,
+    } as Violation & { details?: Record<string, any>; severity?: string; username?: string | null; teamName?: string | null };
+
+    this.violations.push(violation as any);
+
+    // Emit for real-time listeners
+    this.violationEmitter.emit("violation", violation);
+
     return violation;
   }
 
   async getViolations(): Promise<Violation[]> {
-    return this.violations;
+    // Return violations without exposing internal objects directly; map to Violation shape (details as JSON string for DB compatibility)
+    return this.violations.map((v) => ({
+      id: v.id,
+      userId: v.userId,
+      type: v.type,
+      timestamp: v.timestamp,
+      severity: v.severity ?? "info",
+      // If details is an object, stringify for compatibility with shared schema (DB expects JSON string in `details`)
+      details: JSON.stringify(v.details || {}),
+      // keep user metadata when returning so admin UI and exports can include it
+      username: v.username ?? null,
+      teamName: v.teamName ?? null,
+    })) as Violation[];
   }
 }
 

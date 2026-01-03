@@ -1,5 +1,5 @@
 import { Shield, LogIn, UserPlus, Trash2, Users as UsersIcon, Activity, Lock, Unlock, AlertTriangle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -44,8 +44,38 @@ export default function Admin() {
   const { data: violations } = useQuery<Violation[]>({
     queryKey: ["/api/admin/violations"],
     enabled: me?.role === "admin",
-    refetchInterval: 5000 // Poll for live updates
+    refetchInterval: 5000 // Poll for live updates as fallback
   });
+
+  // Real-time updates via Server-Sent Events
+  useEffect(() => {
+    if (me?.role !== "admin") return;
+    const es = new EventSource("/api/admin/violations/stream");
+
+    const onViolation = (ev: MessageEvent) => {
+      try {
+        const v = JSON.parse(ev.data);
+        // add violation to react-query cache (prepend)
+        queryClient.setQueryData<Violation[]>(["/api/admin/violations"], (old = []) => [
+          v as Violation,
+          ...old,
+        ]);
+      } catch (e) {
+        // ignore parse errors
+      }
+    };
+
+    es.addEventListener("violation", onViolation as any);
+
+    es.onerror = () => {
+      es.close();
+    };
+
+    return () => {
+      es.removeEventListener("violation", onViolation as any);
+      es.close();
+    };
+  }, [me]);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: any) => {
@@ -181,17 +211,115 @@ export default function Admin() {
           <AlertTriangle className="w-6 h-6 animate-pulse" />
           Live Violation Detector
         </h2>
+
+        {/* Admin testing controls: simulate violations + export */}
+        <div className="mb-4 flex items-center gap-3">
+          <select
+            className="bg-black/50 border-white/10 text-sm p-2 rounded"
+            onChange={(e) => { (document.getElementById("simulate-user") as HTMLSelectElement).value = e.target.value }}
+          >
+            <option value="">Select user...</option>
+            {users?.filter(u => u.role !== 'admin').map(u => (
+              <option key={u.id} value={u.id}>{u.username} ({u.teamId})</option>
+            ))}
+          </select>
+
+          <select id="simulate-type" className="bg-black/50 border-white/10 text-sm p-2 rounded">
+            <option value="tab_switch">tab_switch</option>
+            <option value="copy">copy</option>
+            <option value="paste">paste</option>
+            <option value="cut">cut</option>
+            <option value="shortcut_attempt">shortcut_attempt</option>
+            <option value="window_blur">window_blur</option>
+          </select>
+
+          <input id="simulate-user" type="hidden" />
+
+          <button
+            onClick={async () => {
+              const userId = (document.getElementById("simulate-user") as HTMLInputElement).value;
+              const type = (document.getElementById("simulate-type") as HTMLSelectElement).value;
+              if (!userId) return alert("Select a user to simulate");
+              await apiRequest("POST", "/api/admin/violations/simulate", { userId, type, details: { simulated: true } });
+            }}
+            className="px-4 py-2 rounded bg-red-500 text-white text-sm"
+          >Simulate</button>
+
+          {/* Export Controls */}
+          <select id="export-type" className="bg-black/50 border-white/10 text-sm p-2 rounded">
+            <option value="">All types</option>
+            <option value="tab_switch">tab_switch</option>
+            <option value="copy">copy</option>
+            <option value="paste">paste</option>
+            <option value="cut">cut</option>
+            <option value="shortcut_attempt">shortcut_attempt</option>
+            <option value="window_blur">window_blur</option>
+          </select>
+
+          <select id="export-severity" className="bg-black/50 border-white/10 text-sm p-2 rounded">
+            <option value="">All severities</option>
+            <option value="info">info</option>
+            <option value="warning">warning</option>
+            <option value="high">high</option>
+          </select>
+
+          <input id="export-since" type="date" className="bg-black/50 border-white/10 text-sm p-2 rounded" />
+          <input id="export-until" type="date" className="bg-black/50 border-white/10 text-sm p-2 rounded" />
+
+          <button
+            onClick={async () => {
+              const params = new URLSearchParams();
+              const t = (document.getElementById("export-type") as HTMLSelectElement).value;
+              const s = (document.getElementById("export-severity") as HTMLSelectElement).value;
+              const since = (document.getElementById("export-since") as HTMLInputElement).value;
+              const until = (document.getElementById("export-until") as HTMLInputElement).value;
+              if (t) params.set("type", t);
+              if (s) params.set("severity", s);
+              if (since) params.set("since", new Date(since).toISOString());
+              if (until) params.set("until", new Date(until).toISOString());
+
+              const res = await apiRequest("GET", `/api/admin/violations/export?${params.toString()}`);
+              const blob = await res.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "violations.csv";
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="px-4 py-2 rounded bg-white text-black text-sm"
+          >Export CSV</button>
+        </div>
+
         <div className="max-h-48 overflow-y-auto space-y-2 font-mono text-sm">
           {violations?.length === 0 ? (
             <p className="text-gray-600 italic">No violations detected yet.</p>
           ) : (
             violations?.map((v) => {
-              const u = users?.find(user => user.id === v.userId);
+              // details may be a JSON string (from getViolations) or already an object (from SSE)
+              let details: any = {};
+              try { details = typeof v.details === 'string' ? JSON.parse(v.details) : (v as any).details || {}; } catch (e) { details = { raw: v.details }; }
+              const u = users?.find(user => user.id === v.userId) || { username: (v as any).username, teamName: (v as any).teamName };
+
               return (
-                <div key={v.id} className="flex justify-between items-center p-2 bg-red-500/5 border-l-2 border-red-500 rounded">
-                  <span className="text-gray-300">[{new Date(v.timestamp).toLocaleTimeString()}]</span>
-                  <span className="text-white font-bold">{u?.username || 'Unknown'}</span>
-                  <span className="text-red-400 uppercase">{v.type.replace('_', ' ')}</span>
+                <div key={v.id} className="flex flex-col p-2 bg-red-500/5 border-l-2 border-red-500 rounded">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300">[{new Date(v.timestamp).toLocaleTimeString()}]</span>
+                    <span className="text-white font-bold">{u?.username || 'Unknown'}</span>
+                    <span className="text-xs text-gray-400 ml-4">{u?.teamName || ''}</span>
+                    <span className="text-red-400 uppercase ml-auto">{v.type.replace('_', ' ')}</span>
+                  </div>
+                  <div className="mt-1 text-xs text-gray-300">
+                    {Object.keys(details).length === 0 ? (
+                      <span className="text-gray-500 italic">No extra details</span>
+                    ) : (
+                      <div className="space-y-1">
+                        {Object.entries(details).map(([k, val]) => (
+                          <div key={k}><strong className="text-gray-400">{k}:</strong> <span className="text-white">{String(val)}</span></div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })
