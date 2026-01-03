@@ -1,0 +1,166 @@
+🔐 FINAL MASTER PROMPT
+(ADMIN-ONLY PANEL + LOCKED ROUNDS + PROPER AUTHORIZATION)
+
+Role:
+You are a senior full-stack developer and system security architect.
+
+Goal:
+Build a secure event web application for “Decode & Dominate” where:
+
+The Admin Panel is accessible ONLY to organizers
+
+Normal users can NEVER access admin features
+
+Round 1, Round 2, and Round 3 are locked by default
+
+Only admin-authenticated and authorized participants can access allowed rounds
+
+🔐 AUTHENTICATION & AUTHORIZATION (MANDATORY)
+
+Implement login using username and password
+
+Every participant must log in using credentials created and approved by the Admin
+
+Participants cannot self-register
+
+Without admin-approved credentials, login must be denied
+
+Each logged-in user must have:
+
+A role (admin or participant)
+
+Individual round permissions (round1, round2, round3)
+
+Authentication alone is NOT enough
+The backend must strictly enforce role-based and permission-based authorization
+
+👤 USER ROLES
+🧑‍💼 ADMIN (Organizer)
+
+Can access the Admin Panel
+
+Can create participant accounts individually
+
+Assign:
+
+Username
+
+Password
+
+Round access permissions
+
+Can enable or disable:
+
+Round 1
+
+Round 2
+
+Round 3
+
+Can monitor live anti-cheat status
+
+Has full control over access and attempts
+
+👥 PARTICIPANT (User)
+
+Can log in only with admin-provided credentials
+
+Can access only the rounds explicitly enabled by admin
+
+Must never see or access admin routes or admin UI
+
+Any unauthorized access attempt must be blocked
+
+🛑 STRICT ROUTE PROTECTION (CRITICAL)
+
+The backend must verify on every request:
+
+User is logged in
+
+User role is correct
+
+User has permission for the requested round
+
+If a participant manually enters:
+
+/admin → return 403 Forbidden
+
+/round1, /round2, /round3 without permission → Access Denied
+
+Frontend checks alone are NOT trusted
+
+🔒 ROUND LOCKING BEHAVIOR
+
+All rounds are locked by default
+
+A participant sees:
+
+“Access Locked by Organizer” if not authorized
+
+Round pages load only after backend approval
+
+🧭 DASHBOARD LAYOUT
+
+Right-side fixed dashboard
+
+Left-side dynamic content loaded from backend routes
+
+Dashboard must display:
+
+Logged-in username
+
+Role (Admin / Participant)
+
+Round access status (Locked / Unlocked)
+
+🛠️ ADMIN PANEL (ORGANIZER ONLY)
+
+Separate admin dashboard
+
+Features:
+
+Create users individually
+
+Assign username and password
+
+Enable or disable Round 1 / 2 / 3 per user
+
+Lock or unlock attempts at any time
+
+Changes must apply immediately without restart
+
+📡 LIVE ANTI-CHEAT PANEL (ADMIN SIDE ONLY)
+
+Continuously updated admin dashboard
+
+Displays:
+
+Active users
+
+Current round
+
+Violation status (Tab switch / Screenshot / Normal)
+
+Participants must NEVER access this panel
+
+🚫 ANTI-CHEAT ENFORCEMENT (PARTICIPANTS)
+
+Disable copy & paste
+
+Disable right-click
+
+Detect tab switching or window blur → report to backend
+
+Detect screenshot keys → report to backend
+
+Backend logs violations in real time
+
+⚙️ TECH CONSTRAINTS
+
+Frontend: HTML, CSS, JavaScript
+
+Backend: Node.js + Express OR Python Flask
+
+Backend must enforce all security rules
+
+Frontend checks alone are NOT sufficient
